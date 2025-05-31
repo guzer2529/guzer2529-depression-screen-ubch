@@ -91,11 +91,35 @@ function render() {
     if (is2QPositive) {
       // 9Q
       const score9Q = nineQAnswers.reduce((sum, v) => sum + (v ?? 0), 0);
-      let level9Q = score9Q <= 6 ? 'ไม่มีภาวะซึมเศร้า'
-        : score9Q <= 12 ? 'ภาวะซึมเศร้าระดับน้อย'
-        : score9Q <= 18 ? 'ภาวะซึมเศร้าระดับปานกลาง'
-        : 'ภาวะซึมเศร้าระดับรุนแรง';
-      resultDiv.innerHTML += `<b>9Q:</b> ${score9Q} คะแนน (${level9Q})<br/>`;
+      let level9Q = '';
+      let color9Q = '';
+      if (score9Q <= 6) {
+        level9Q = 'ไม่มีภาวะซึมเศร้า';
+        color9Q = 'green';
+      } else if (score9Q <= 12) {
+        level9Q = 'ภาวะซึมเศร้าระดับน้อย';
+        color9Q = 'green';
+      } else if (score9Q <= 18) {
+        level9Q = 'ภาวะซึมเศร้าระดับปานกลาง';
+        color9Q = 'orange';
+      } else {
+        level9Q = 'ภาวะซึมเศร้าระดับรุนแรง';
+        color9Q = 'red';
+      }
+      // ใช้ inline style เพื่อความง่าย
+      resultDiv.innerHTML += `<b>9Q:</b> ${score9Q} คะแนน (<span style="background:${
+        color9Q === 'green'
+          ? '#d1fae5'
+          : color9Q === 'orange'
+          ? '#fef9c3'
+          : '#fee2e2'
+      };color:${
+        color9Q === 'green'
+          ? '#059669'
+          : color9Q === 'orange'
+          ? '#ea580c'
+          : '#dc2626'
+      };font-weight:700;padding:2px 8px;border-radius:8px">${level9Q}</span>)<br/>`;
 
       // 8Q เฉพาะถ้า 9Q >= 7
       if (score9Q >= 7) {
@@ -108,6 +132,7 @@ function render() {
           : eightQScore <= 8 ? 'แนวโน้มจะฆ่าตัวตายในปัจจุบันในระดับน้อย'
           : eightQScore <= 16 ? 'แนวโน้มจะฆ่าตัวตายในปัจจุบันในระดับปานกลาง'
           : 'แนวโน้มจะฆ่าตัวตายในปัจจุบันในระดับรุนแรง';
+        // ตรงนี้ ถ้าต้องการสีแยกแบบ 9Q ทำแบบเดียวกันได้
         resultDiv.innerHTML += `<b>8Q:</b> ${eightQScore} คะแนน (${level8Q})<br/>`;
       }
     }
@@ -124,7 +149,7 @@ function answer2Q(index, value) {
     } else {
       step = 4;
     }
-    setTimeout(render, 250); // smooth change
+    setTimeout(render, 250);
   }
 }
 
@@ -138,14 +163,13 @@ function answer9Q(index, value) {
     } else {
       step = 4;
     }
-    setTimeout(render, 250); // smooth change
+    setTimeout(render, 250);
   }
 }
 
 function answer8Q(index, value) {
   eightQAnswers[index] = value;
   render();
-  // เงื่อนไขพิเศษ ข้อ 4: ถามเฉพาะถ้าข้อ 3 ตอบ 'มี'
   let totalQs = eightQ.length;
   if (eightQAnswers[2] !== 1) totalQs -= 1;
   if (eightQAnswers.filter(v => v !== undefined).length === totalQs) {
