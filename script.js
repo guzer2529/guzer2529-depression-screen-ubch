@@ -1,5 +1,3 @@
-// Depression screening (2Q 9Q 8Q) logic based on PDF, with full scoring & result summary
-
 const twoQ = [
   "ใน 2 สัปดาห์ที่ผ่านมา รวมวันนี้ ท่านรู้สึกหดหู่เศร้าหรือท้อแท้สิ้นหวังหรือไม่?",
   "ใน 2 สัปดาห์ที่ผ่านมา รวมวันนี้ ท่านรู้สึกเบื่อ ทำอะไรก็ไม่เพลิดเพลินหรือไม่?"
@@ -48,9 +46,11 @@ function render() {
     twoQ.forEach((q, i) => {
       const div = document.createElement('div');
       div.className = 'question';
-      div.innerHTML = `<p>${q}</p>
-        <button onclick="answer2Q(${i}, true)">มี</button>
-        <button onclick="answer2Q(${i}, false)">ไม่มี</button>`;
+      div.innerHTML = `
+        <p>${q}</p>
+        <button onclick="answer2Q(${i}, true)" class="${twoQAnswers[i] === true ? 'selected' : ''}">มี</button>
+        <button onclick="answer2Q(${i}, false)" class="${twoQAnswers[i] === false ? 'selected' : ''}">ไม่มี</button>
+      `;
       app.appendChild(div);
     });
   } else if (step === 2) {
@@ -59,7 +59,8 @@ function render() {
       div.className = 'question';
       div.innerHTML = `<p>${i+1}. ${q}</p>` +
         nineChoices.map(
-          (ch, j) => `<button onclick="answer9Q(${i}, ${ch.value})">${ch.label}</button>`
+          (ch) =>
+            `<button onclick="answer9Q(${i}, ${ch.value})" class="${nineQAnswers[i] === ch.value ? 'selected' : ''}">${ch.label}</button>`
         ).join('');
       app.appendChild(div);
     });
@@ -71,9 +72,11 @@ function render() {
       }
       const div = document.createElement('div');
       div.className = 'question';
-      div.innerHTML = `<p>${i+1}. ${item.q}</p>
-        <button onclick="answer8Q(${i}, 0)">ไม่มี/ได้</button>
-        <button onclick="answer8Q(${i}, 1)">มี/ไม่ได้</button>`;
+      div.innerHTML = `
+        <p>${i+1}. ${item.q}</p>
+        <button onclick="answer8Q(${i}, 0)" class="${eightQAnswers[i] === 0 ? 'selected' : ''}">ไม่มี/ได้</button>
+        <button onclick="answer8Q(${i}, 1)" class="${eightQAnswers[i] === 1 ? 'selected' : ''}">มี/ไม่ได้</button>
+      `;
       app.appendChild(div);
     });
   } else if (step === 4) {
@@ -114,38 +117,40 @@ function render() {
 
 function answer2Q(index, value) {
   twoQAnswers[index] = value;
+  render();
   if (twoQAnswers.length === 2 && twoQAnswers.every(v => v !== undefined)) {
     if (twoQAnswers.includes(true)) {
       step = 2;
     } else {
       step = 4;
     }
-    render();
+    setTimeout(render, 250); // smooth change
   }
 }
 
 function answer9Q(index, value) {
   nineQAnswers[index] = value;
+  render();
   if (nineQAnswers.length === 9 && nineQAnswers.every(v => v !== undefined)) {
-    // ถ้า score >=7 ให้ถาม 8Q, ถ้าไม่ถึง 7 ไปสรุปเลย
     const score9Q = nineQAnswers.reduce((sum, v) => sum + (v ?? 0), 0);
     if (score9Q >= 7) {
       step = 3;
     } else {
       step = 4;
     }
-    render();
+    setTimeout(render, 250); // smooth change
   }
 }
 
 function answer8Q(index, value) {
   eightQAnswers[index] = value;
+  render();
   // เงื่อนไขพิเศษ ข้อ 4: ถามเฉพาะถ้าข้อ 3 ตอบ 'มี'
   let totalQs = eightQ.length;
   if (eightQAnswers[2] !== 1) totalQs -= 1;
   if (eightQAnswers.filter(v => v !== undefined).length === totalQs) {
     step = 4;
-    render();
+    setTimeout(render, 180);
   }
 }
 
