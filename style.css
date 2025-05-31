@@ -122,3 +122,14 @@ button.selected, .btn.selected {
   .question { padding: 11px 4px 7px 8px;}
   button { font-size: 0.96rem; min-width: 70px; }
 }
+
+.result-level {
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 1.08em;
+}
+.result-level[color="green"] { background: #d1fae5; color: #059669; }
+.result-level[color="orange"] { background: #fef9c3; color: #ea580c; }
+.result-level[color="red"] { background: #fee2e2; color: #dc2626; }
+
