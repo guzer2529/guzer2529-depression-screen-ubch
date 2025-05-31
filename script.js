@@ -1,3 +1,5 @@
+// Depression screening (2Q 9Q 8Q) logic based on PDF, with full scoring & result summary
+
 const twoQ = [
   "ใน 2 สัปดาห์ที่ผ่านมา รวมวันนี้ ท่านรู้สึกหดหู่เศร้าหรือท้อแท้สิ้นหวังหรือไม่?",
   "ใน 2 สัปดาห์ที่ผ่านมา รวมวันนี้ ท่านรู้สึกเบื่อ ทำอะไรก็ไม่เพลิดเพลินหรือไม่?"
@@ -6,18 +8,37 @@ const twoQ = [
 const nineQ = [
   "เบื่อ ไม่สนใจทำอะไร",
   "ไม่สบายใจ ซึมเศร้า ท้อแท้",
-  "หลับยาก หลับไม่สนิท หรือหลับมากไป",
-  "เหนื่อยง่าย หรือไม่ค่อยมีแรง",
+  "หลับยากหรือหลับๆตื่นๆ หรือหลับมากไป",
+  "เหนื่อยง่ายหรือไม่ค่อยมีแรง",
   "เบื่ออาหาร หรือกินมากเกินไป",
-  "รู้สึกไม่ดีกับตัวเอง คิดว่าตัวเองล้มเหลว",
-  "สมาธิไม่ดีเวลาทำอะไร",
-  "พูดช้าลง หรือกระสับกระส่าย",
-  "คิดทำร้ายตนเอง หรือคิดว่าตายไปคงจะดี"
+  "รู้สึกไม่ดีกับตัวเอง คิดว่าตัวเองล้มเหลว หรือทำให้ตนเองหรือครอบครัวผิดหวัง",
+  "สมาธิไม่ดีเวลาทำอะไร เช่น ดูโทรทัศน์ ฟังวิทยุ หรือทำงานที่ต้องใช้ความตั้งใจ",
+  "พูดช้า ทำอะไรช้าลง จนคนอื่นสังเกตเห็นได้ หรือกระสับกระส่ายไม่สามารถอยู่นิ่งได้เหมือนที่เคยเป็น",
+  "คิดทำร้ายตนเองหรือคิดว่าถ้าตายไปคงจะดี"
+];
+const nineChoices = [
+  { label: "ไม่มีเลย", value: 0 },
+  { label: "เป็นบางวัน (1-7 วัน)", value: 1 },
+  { label: "เป็นบ่อย (>7 วัน)", value: 2 },
+  { label: "เป็นทุกวัน", value: 3 }
 ];
 
-let step = 1;
+const eightQ = [
+  { q: "ช่วง 1 เดือนที่ผ่านมา คิดอยากตาย หรือคิดว่าตายไปจะดีกว่า", score: [0, 1] },
+  { q: "ช่วง 1 เดือนที่ผ่านมา อยากทำร้ายตัวเอง หรือทำให้ตัวเองบาดเจ็บ", score: [0, 2] },
+  { q: "ช่วง 1 เดือนที่ผ่านมา คิดเกี่ยวกับการฆ่าตัวตาย", score: [0, 6] },
+  { q: "ถ้าตอบว่าคิดเกี่ยวกับการฆ่าตัวตาย ท่านสามารถควบคุมความอยากฆ่าตัวตายที่ท่านคิดอยู่นั้นได้หรือไม่? (ตอบ 'ไม่ได้' ให้ 8 คะแนน)", score: [0, 8], conditional: 2 },
+  { q: "ช่วง 1 เดือนที่ผ่านมา มีแผนการที่จะฆ่าตัวตาย", score: [0, 8] },
+  { q: "ช่วง 1 เดือนที่ผ่านมา ได้เตรียมการที่จะทำร้ายตนเอง หรือเตรียมการจะฆ่าตัวตาย โดยตั้งใจว่าจะให้ตายจริงๆ", score: [0, 9] },
+  { q: "ช่วง 1 เดือนที่ผ่านมา ได้ทำให้ตนเองบาดเจ็บ แต่ไม่ตั้งใจที่จะทำให้เสียชีวิต", score: [0, 4] },
+  { q: "ช่วง 1 เดือนที่ผ่านมา ได้พยายามฆ่าตัวตาย โดยคาดหวัง/ตั้งใจที่จะให้ตาย", score: [0, 10] },
+  { q: "ตลอดชีวิตที่ผ่านมา ท่านเคยพยายามฆ่าตัวตาย", score: [0, 4] }
+];
+
+let step = 1; // 1=2Q, 2=9Q, 3=8Q, 4=result
 let twoQAnswers = [];
 let nineQAnswers = [];
+let eightQAnswers = [];
 
 function render() {
   const app = document.getElementById('app');
@@ -36,41 +57,94 @@ function render() {
     nineQ.forEach((q, i) => {
       const div = document.createElement('div');
       div.className = 'question';
-      div.innerHTML = `<p>${i + 1}. ${q}</p>
-        <button onclick="answer9Q(${i}, 0)">ไม่มีเลย</button>
-        <button onclick="answer9Q(${i}, 1)">บางวัน</button>
-        <button onclick="answer9Q(${i}, 2)">บ่อย</button>
-        <button onclick="answer9Q(${i}, 3)">ทุกวัน</button>`;
+      div.innerHTML = `<p>${i+1}. ${q}</p>` +
+        nineChoices.map(
+          (ch, j) => `<button onclick="answer9Q(${i}, ${ch.value})">${ch.label}</button>`
+        ).join('');
       app.appendChild(div);
     });
   } else if (step === 3) {
-    const score = nineQAnswers.reduce((sum, val) => sum + val, 0);
-    const result = document.createElement('div');
-    result.className = 'result';
-    result.innerHTML = `<p>คะแนนรวม 9Q: ${score}</p>
-      <p>${score <= 6 ? 'ไม่มีภาวะซึมเศร้า' :
-        score <= 12 ? 'ภาวะซึมเศร้าระดับน้อย' :
-        score <= 18 ? 'ภาวะซึมเศร้าระดับปานกลาง' : 'ภาวะซึมเศร้ารุนแรง'}</p>`;
-    app.appendChild(result);
+    eightQ.forEach((item, i) => {
+      if (item.conditional !== undefined) {
+        // ข้อ 4 ให้ถามต่อเมื่อข้อ 3 ตอบ 'มี'
+        if (eightQAnswers[item.conditional] !== 1) return;
+      }
+      const div = document.createElement('div');
+      div.className = 'question';
+      div.innerHTML = `<p>${i+1}. ${item.q}</p>
+        <button onclick="answer8Q(${i}, 0)">ไม่มี/ได้</button>
+        <button onclick="answer8Q(${i}, 1)">มี/ไม่ได้</button>`;
+      app.appendChild(div);
+    });
+  } else if (step === 4) {
+    // Summary result section
+    const resultDiv = document.createElement('div');
+    resultDiv.className = 'result';
+    // 2Q
+    const is2QPositive = twoQAnswers.includes(true);
+    resultDiv.innerHTML = `<h2>ผลการประเมิน</h2><hr style='margin:16px;'>`;
+    resultDiv.innerHTML += `<b>2Q:</b> ${is2QPositive ? 'มีแนวโน้มซึมเศร้า' : 'ปกติ ไม่เป็นโรคซึมเศร้า'}<br/>`;
+
+    if (is2QPositive) {
+      // 9Q
+      const score9Q = nineQAnswers.reduce((sum, v) => sum + (v ?? 0), 0);
+      let level9Q = score9Q <= 6 ? 'ไม่มีภาวะซึมเศร้า'
+        : score9Q <= 12 ? 'ภาวะซึมเศร้าระดับน้อย'
+        : score9Q <= 18 ? 'ภาวะซึมเศร้าระดับปานกลาง'
+        : 'ภาวะซึมเศร้าระดับรุนแรง';
+      resultDiv.innerHTML += `<b>9Q:</b> ${score9Q} คะแนน (${level9Q})<br/>`;
+
+      // 8Q เฉพาะถ้า 9Q >= 7
+      if (score9Q >= 7) {
+        let eightQScore = 0;
+        for (let i = 0; i < eightQ.length; i++) {
+          if (eightQ[i].conditional !== undefined && eightQAnswers[eightQ[i].conditional] !== 1) continue;
+          if (eightQAnswers[i] != null) eightQScore += eightQ[i].score[eightQAnswers[i]];
+        }
+        let level8Q = eightQScore === 0 ? 'ไม่มีแนวโน้มจะฆ่าตัวตายในปัจจุบัน'
+          : eightQScore <= 8 ? 'แนวโน้มจะฆ่าตัวตายในปัจจุบันในระดับน้อย'
+          : eightQScore <= 16 ? 'แนวโน้มจะฆ่าตัวตายในปัจจุบันในระดับปานกลาง'
+          : 'แนวโน้มจะฆ่าตัวตายในปัจจุบันในระดับรุนแรง';
+        resultDiv.innerHTML += `<b>8Q:</b> ${eightQScore} คะแนน (${level8Q})<br/>`;
+      }
+    }
+    app.appendChild(resultDiv);
   }
 }
 
 function answer2Q(index, value) {
   twoQAnswers[index] = value;
-  if (twoQAnswers.length === 2 && twoQAnswers.includes(true)) {
-    step = 2;
-    render();
-  } else if (twoQAnswers.length === 2 && !twoQAnswers.includes(true)) {
-    step = 3;
-    nineQAnswers = Array(9).fill(0);
+  if (twoQAnswers.length === 2 && twoQAnswers.every(v => v !== undefined)) {
+    if (twoQAnswers.includes(true)) {
+      step = 2;
+    } else {
+      step = 4;
+    }
     render();
   }
 }
 
 function answer9Q(index, value) {
   nineQAnswers[index] = value;
-  if (nineQAnswers.every(v => v !== undefined)) {
-    step = 3;
+  if (nineQAnswers.length === 9 && nineQAnswers.every(v => v !== undefined)) {
+    // ถ้า score >=7 ให้ถาม 8Q, ถ้าไม่ถึง 7 ไปสรุปเลย
+    const score9Q = nineQAnswers.reduce((sum, v) => sum + (v ?? 0), 0);
+    if (score9Q >= 7) {
+      step = 3;
+    } else {
+      step = 4;
+    }
+    render();
+  }
+}
+
+function answer8Q(index, value) {
+  eightQAnswers[index] = value;
+  // เงื่อนไขพิเศษ ข้อ 4: ถามเฉพาะถ้าข้อ 3 ตอบ 'มี'
+  let totalQs = eightQ.length;
+  if (eightQAnswers[2] !== 1) totalQs -= 1;
+  if (eightQAnswers.filter(v => v !== undefined).length === totalQs) {
+    step = 4;
     render();
   }
 }
@@ -79,6 +153,7 @@ function restart() {
   step = 1;
   twoQAnswers = [];
   nineQAnswers = [];
+  eightQAnswers = [];
   render();
 }
 
