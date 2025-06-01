@@ -21,6 +21,7 @@ const nineChoices = [
   { label: "เป็นทุกวัน", value: 3 }
 ];
 
+// eightQ: ยังเรียง index ปกติ, ปรับการ render สำหรับ 3.1
 const eightQ = [
   { q: "ช่วง 1 เดือนที่ผ่านมา คิดอยากตาย หรือคิดว่าตายไปจะดีกว่า", score: [0, 1] },         
   { q: "ช่วง 1 เดือนที่ผ่านมา อยากทำร้ายตัวเอง หรือทำให้ตัวเองบาดเจ็บ", score: [0, 2] }, 
@@ -66,22 +67,29 @@ function render() {
       app.appendChild(div);
     });
   } else if (step === 3) {
-    eightQ.forEach((item, i) => {
-      if (item.conditional !== undefined) {
-        // ข้อ 4 ให้ถามต่อเมื่อข้อ 3 ตอบ 'มี'
-        if (eightQAnswers[item.conditional] !== 1) return;
+    // ----- 8Q render with custom number 3.1 -----
+    let displayIndex = 1;
+    for (let i = 0; i < eightQ.length; i++) {
+      if (i === 3 && eightQAnswers[2] !== 1) continue; // ข้อ 3.1
+      let numLabel = "";
+      if (i === 3 && eightQAnswers[2] === 1) {
+        numLabel = "3.1";
+      } else if (i > 3) {
+        numLabel = i; // เริ่มข้อ 4 หลัง 3.1
+      } else {
+        numLabel = i + 1;
       }
-      const btn0 = item.customLabel ? item.customLabel[0] : "ไม่มี";
-      const btn1 = item.customLabel ? item.customLabel[1] : "มี";
+      const btn0 = eightQ[i].customLabel ? eightQ[i].customLabel[0] : "ไม่มี";
+      const btn1 = eightQ[i].customLabel ? eightQ[i].customLabel[1] : "มี";
       const div = document.createElement('div');
       div.className = 'question';
       div.innerHTML = `
-        <p>${i+1}. ${item.q}</p>
+        <p>${numLabel}. ${eightQ[i].q}</p>
         <button onclick="answer8Q(${i}, 0)" class="${eightQAnswers[i] === 0 ? 'selected' : ''}">${btn0}</button>
         <button onclick="answer8Q(${i}, 1)" class="${eightQAnswers[i] === 1 ? 'selected' : ''}">${btn1}</button>
       `;
       app.appendChild(div);
-    });
+    }
   } else if (step === 4) {
     const resultDiv = document.createElement('div');
     resultDiv.className = 'result';
@@ -216,8 +224,7 @@ function answer9Q(index, value) {
 function answer8Q(index, value) {
   eightQAnswers[index] = value;
   render();
-  let totalQs = eightQ.length;
-  if (eightQAnswers[2] !== 1) totalQs -= 1;
+  let totalQs = eightQAnswers[2] === 1 ? eightQ.length : eightQ.length - 1;
   if (eightQAnswers.filter(v => v !== undefined).length === totalQs) {
     step = 4;
     setTimeout(render, 180);
