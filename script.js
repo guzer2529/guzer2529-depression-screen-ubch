@@ -22,10 +22,11 @@ const nineChoices = [
 ];
 
 const eightQ = [
-  { q: "ช่วง 1 เดือนที่ผ่านมา คิดอยากตาย หรือคิดว่าตายไปจะดีกว่า", score: [0, 1] },
-  { q: "ช่วง 1 เดือนที่ผ่านมา อยากทำร้ายตัวเอง หรือทำให้ตัวเองบาดเจ็บ", score: [0, 2] },
-  { q: "ช่วง 1 เดือนที่ผ่านมา คิดเกี่ยวกับการฆ่าตัวตาย", score: [0, 6] },
-  { q: "ถ้าตอบว่าคิดเกี่ยวกับการฆ่าตัวตาย ท่านสามารถควบคุมความอยากฆ่าตัวตายที่ท่านคิดอยู่นั้นได้หรือไม่? (ตอบ 'ไม่ได้' ให้ 8 คะแนน)", score: [0, 8], conditional: 2 },
+  { q: "ช่วง 1 เดือนที่ผ่านมา คิดอยากตาย หรือคิดว่าตายไปจะดีกว่า", score: [0, 1] },         
+  { q: "ช่วง 1 เดือนที่ผ่านมา อยากทำร้ายตัวเอง หรือทำให้ตัวเองบาดเจ็บ", score: [0, 2] }, 
+  { q: "ช่วง 1 เดือนที่ผ่านมา คิดเกี่ยวกับการฆ่าตัวตาย", score: [0, 6], customLabel: ["ไม่มี", "มี"] },
+  { q: "ถ้าตอบว่าคิดเกี่ยวกับการฆ่าตัวตาย ท่านสามารถควบคุมความอยากฆ่าตัวตายที่ท่านคิดอยู่นั้นได้หรือไม่? (ตอบ 'ไม่ได้' ให้ 8 คะแนน)", 
+    score: [0, 8], customLabel: ["ได้", "ไม่ได้"], conditional: 2 },
   { q: "ช่วง 1 เดือนที่ผ่านมา มีแผนการที่จะฆ่าตัวตาย", score: [0, 8] },
   { q: "ช่วง 1 เดือนที่ผ่านมา ได้เตรียมการที่จะทำร้ายตนเอง หรือเตรียมการจะฆ่าตัวตาย โดยตั้งใจว่าจะให้ตายจริงๆ", score: [0, 9] },
   { q: "ช่วง 1 เดือนที่ผ่านมา ได้ทำให้ตนเองบาดเจ็บ แต่ไม่ตั้งใจที่จะทำให้เสียชีวิต", score: [0, 4] },
@@ -70,26 +71,47 @@ function render() {
         // ข้อ 4 ให้ถามต่อเมื่อข้อ 3 ตอบ 'มี'
         if (eightQAnswers[item.conditional] !== 1) return;
       }
+      const btn0 = item.customLabel ? item.customLabel[0] : "ไม่มี";
+      const btn1 = item.customLabel ? item.customLabel[1] : "มี";
       const div = document.createElement('div');
       div.className = 'question';
       div.innerHTML = `
         <p>${i+1}. ${item.q}</p>
-        <button onclick="answer8Q(${i}, 0)" class="${eightQAnswers[i] === 0 ? 'selected' : ''}">ไม่มี/ได้</button>
-        <button onclick="answer8Q(${i}, 1)" class="${eightQAnswers[i] === 1 ? 'selected' : ''}">มี/ไม่ได้</button>
+        <button onclick="answer8Q(${i}, 0)" class="${eightQAnswers[i] === 0 ? 'selected' : ''}">${btn0}</button>
+        <button onclick="answer8Q(${i}, 1)" class="${eightQAnswers[i] === 1 ? 'selected' : ''}">${btn1}</button>
       `;
       app.appendChild(div);
     });
   } else if (step === 4) {
-    // Summary result section
     const resultDiv = document.createElement('div');
     resultDiv.className = 'result';
     // 2Q
     const is2QPositive = twoQAnswers.includes(true);
+    let level2Q = '';
+    let color2Q = '';
+    if (!is2QPositive) {
+      level2Q = 'ปกติ ไม่เป็นโรคซึมเศร้า';
+      color2Q = 'green';
+    } else {
+      level2Q = 'มีแนวโน้มซึมเศร้า';
+      color2Q = 'orange';
+    }
     resultDiv.innerHTML = `<h2>ผลการประเมิน</h2><hr style='margin:16px;'>`;
-    resultDiv.innerHTML += `<b>2Q:</b> ${is2QPositive ? 'มีแนวโน้มซึมเศร้า' : 'ปกติ ไม่เป็นโรคซึมเศร้า'}<br/>`;
+    resultDiv.innerHTML += `<b>2Q:</b> <span style="background:${
+      color2Q === 'green'
+        ? '#d1fae5'
+        : color2Q === 'orange'
+        ? '#fef9c3'
+        : '#fee2e2'
+    };color:${
+      color2Q === 'green'
+        ? '#059669'
+        : color2Q === 'orange'
+        ? '#ea580c'
+        : '#dc2626'
+    };font-weight:700;padding:2px 8px;border-radius:8px">${level2Q}</span><br/>`;
 
     if (is2QPositive) {
-      // 9Q
       const score9Q = nineQAnswers.reduce((sum, v) => sum + (v ?? 0), 0);
       let level9Q = '';
       let color9Q = '';
@@ -106,7 +128,6 @@ function render() {
         level9Q = 'ภาวะซึมเศร้าระดับรุนแรง';
         color9Q = 'red';
       }
-      // ใช้ inline style เพื่อความง่าย
       resultDiv.innerHTML += `<b>9Q:</b> ${score9Q} คะแนน (<span style="background:${
         color9Q === 'green'
           ? '#d1fae5'
@@ -121,21 +142,46 @@ function render() {
           : '#dc2626'
       };font-weight:700;padding:2px 8px;border-radius:8px">${level9Q}</span>)<br/>`;
 
-      // 8Q เฉพาะถ้า 9Q >= 7
       if (score9Q >= 7) {
         let eightQScore = 0;
         for (let i = 0; i < eightQ.length; i++) {
           if (eightQ[i].conditional !== undefined && eightQAnswers[eightQ[i].conditional] !== 1) continue;
           if (eightQAnswers[i] != null) eightQScore += eightQ[i].score[eightQAnswers[i]];
         }
-        let level8Q = eightQScore === 0 ? 'ไม่มีแนวโน้มจะฆ่าตัวตายในปัจจุบัน'
-          : eightQScore <= 8 ? 'แนวโน้มจะฆ่าตัวตายในปัจจุบันในระดับน้อย'
-          : eightQScore <= 16 ? 'แนวโน้มจะฆ่าตัวตายในปัจจุบันในระดับปานกลาง'
-          : 'แนวโน้มจะฆ่าตัวตายในปัจจุบันในระดับรุนแรง';
-        // ตรงนี้ ถ้าต้องการสีแยกแบบ 9Q ทำแบบเดียวกันได้
-        resultDiv.innerHTML += `<b>8Q:</b> ${eightQScore} คะแนน (${level8Q})<br/>`;
+        let level8Q = '';
+        let color8Q = '';
+        if (eightQScore === 0) {
+          level8Q = 'ไม่มีแนวโน้มจะฆ่าตัวตายในปัจจุบัน';
+          color8Q = 'green';
+        } else if (eightQScore <= 8) {
+          level8Q = 'แนวโน้มจะฆ่าตัวตายในปัจจุบันในระดับน้อย';
+          color8Q = 'green';
+        } else if (eightQScore <= 16) {
+          level8Q = 'แนวโน้มจะฆ่าตัวตายในปัจจุบันในระดับปานกลาง';
+          color8Q = 'orange';
+        } else {
+          level8Q = 'แนวโน้มจะฆ่าตัวตายในปัจจุบันในระดับรุนแรง';
+          color8Q = 'red';
+        }
+        resultDiv.innerHTML += `<b>8Q:</b> ${eightQScore} คะแนน (<span style="background:${
+          color8Q === 'green'
+            ? '#d1fae5'
+            : color8Q === 'orange'
+            ? '#fef9c3'
+            : '#fee2e2'
+        };color:${
+          color8Q === 'green'
+            ? '#059669'
+            : color8Q === 'orange'
+            ? '#ea580c'
+            : '#dc2626'
+        };font-weight:700;padding:2px 8px;border-radius:8px">${level8Q}</span>)<br/>`;
       }
     }
+    resultDiv.innerHTML += `<hr style="margin:18px;">
+    <div style="font-size:1.05em;line-height:1.8;color:#0ea5e9;background:#f1f5f9;border-radius:10px;padding:10px 7px 10px 10px;font-weight:600;">
+      ท่านสามารถโทรไปที่ <b>สายด่วนมิตรภาพโรงพยาบาลมะเร็งอุบลราชธานี<br>093-576-3438</b> เพื่อรับคำปรึกษา
+    </div>`;
     app.appendChild(resultDiv);
   }
 }
