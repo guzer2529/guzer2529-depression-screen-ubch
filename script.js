@@ -21,7 +21,7 @@ const nineChoices = [
   { label: "เป็นทุกวัน", value: 3 }
 ];
 
-// eightQ: ยังเรียง index ปกติ, ปรับการ render สำหรับ 3.1
+// eightQ: index ปกติ, render สำหรับ 3.1
 const eightQ = [
   { q: "ช่วง 1 เดือนที่ผ่านมา คิดอยากตาย หรือคิดว่าตายไปจะดีกว่า", score: [0, 1] },         
   { q: "ช่วง 1 เดือนที่ผ่านมา อยากทำร้ายตัวเอง หรือทำให้ตัวเองบาดเจ็บ", score: [0, 2] }, 
@@ -68,9 +68,8 @@ function render() {
     });
   } else if (step === 3) {
     // ----- 8Q render with custom number 3.1 -----
-    let displayIndex = 1;
     for (let i = 0; i < eightQ.length; i++) {
-      if (i === 3 && eightQAnswers[2] !== 1) continue; // ข้อ 3.1
+      if (i === 3 && eightQAnswers[2] !== 1) continue; // ข้อ 3.1 เฉพาะถ้าข้อ 3 ตอบ "มี"
       let numLabel = "";
       if (i === 3 && eightQAnswers[2] === 1) {
         numLabel = "3.1";
@@ -194,6 +193,7 @@ function render() {
   }
 }
 
+// เมื่อเลือกคำตอบ ให้ render และเช็คว่า "ครบทุกข้อ" แล้วเปลี่ยน step อัตโนมัติ
 function answer2Q(index, value) {
   twoQAnswers[index] = value;
   render();
@@ -203,7 +203,7 @@ function answer2Q(index, value) {
     } else {
       step = 4;
     }
-    setTimeout(render, 250);
+    setTimeout(render, 200);
   }
 }
 
@@ -217,7 +217,7 @@ function answer9Q(index, value) {
     } else {
       step = 4;
     }
-    setTimeout(render, 250);
+    setTimeout(render, 200);
   }
 }
 
@@ -227,7 +227,7 @@ function answer8Q(index, value) {
   let totalQs = eightQAnswers[2] === 1 ? eightQ.length : eightQ.length - 1;
   if (eightQAnswers.filter(v => v !== undefined).length === totalQs) {
     step = 4;
-    setTimeout(render, 180);
+    setTimeout(render, 200);
   }
 }
 
